@@ -2,6 +2,7 @@ package br.com.alura.adopet.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.mockito.BDDMockito;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.alura.adopet.api.dto.SolicitacaoAdocaoDto;
@@ -41,8 +43,14 @@ class AdocaoServiceTest {
 	@Mock
 	private EmailService emailService;
 
+	@Spy
+	private List<ValidacaoSolicitacaoAdocao> validacoes = new ArrayList<>();
+	
 	@Mock
-	private List<ValidacaoSolicitacaoAdocao> validacoes;
+	private ValidacaoSolicitacaoAdocao validador1;
+	
+	@Mock
+	private ValidacaoSolicitacaoAdocao validador2;
 	
 	@Mock 
 	private Pet pet;
@@ -66,7 +74,7 @@ class AdocaoServiceTest {
 		BDDMockito.given(petRepository.getReferenceById(dto.idPet())).willReturn(pet);
 		BDDMockito.given(tutorRepository.getReferenceById(dto.idTutor())).willReturn(tutor);
 		BDDMockito.given(pet.getAbrigo()).willReturn(abrigo);
-		
+
 		// ACT
 		service.solicitar(dto);
 		
@@ -78,4 +86,22 @@ class AdocaoServiceTest {
 		assertEquals(dto.motivo(), adocaoSalva.getMotivo());
 	}
 
+	@Test
+	void deveriaChamarValidadoesDeAdocaoAoSolicitar() {
+		// ARRANGE
+		this.dto = new SolicitacaoAdocaoDto(10l, 20l, "Motivo qualquer");
+
+		BDDMockito.given(petRepository.getReferenceById(dto.idPet())).willReturn(pet);
+		BDDMockito.given(tutorRepository.getReferenceById(dto.idTutor())).willReturn(tutor);
+		BDDMockito.given(pet.getAbrigo()).willReturn(abrigo);
+		
+		validacoes.add(validador1);
+		validacoes.add(validador2);
+		// ACT
+		service.solicitar(dto);
+		
+		// ASSERT
+		BDDMockito.then(validador1).should().validar(dto);
+		BDDMockito.then(validador2).should().validar(dto);
+	}
 }
